@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart'; // কল করার জন্য জরুরি
 import '../services/database_helper.dart';
 
 class AdminScreen extends StatefulWidget {
+  const AdminScreen({super.key}); // Key যুক্ত করা হয়েছে
+
   @override
-  _AdminScreenState createState() => _AdminScreenState();
+  State<AdminScreen> createState() => _AdminScreenState(); // প্রাইভেট টাইপ ফিক্স
 }
 
 class _AdminScreenState extends State<AdminScreen> {
@@ -13,10 +16,9 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRequests(); // পেজ লোড হওয়ার সময় ডেটা নিয়ে আসবে
+    _loadRequests();
   }
 
-  // ডেটাবেজ থেকে রিকোয়েস্টের লিস্ট নিয়ে আসার ফাংশন
   void _loadRequests() async {
     var data = await _dbHelper.getAllRequests();
     setState(() {
@@ -28,112 +30,38 @@ class _AdminScreenState extends State<AdminScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Control Panel'),
+        title: const Text('Admin Control Panel'),
         backgroundColor: Colors.black87,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _loadRequests, // রিফ্রেশ বাটন
-          ),
-        ],
       ),
       body: _requests.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inbox, size: 80, color: Colors.grey),
-                  SizedBox(height: 10),
-                  Text(
-                    'No service requests found!',
-                    style: TextStyle(color: Colors.grey, fontSize: 18),
-                  ),
-                ],
-              ),
-            )
+          ? const Center(child: Text('No requests found.'))
           : ListView.builder(
               itemCount: _requests.length,
               itemBuilder: (context, index) {
                 final item = _requests[index];
                 return Card(
-                  margin: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                  elevation: 5,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
+                  margin: const EdgeInsets.all(10),
                   child: ListTile(
-                    contentPadding: EdgeInsets.all(15),
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.redAccent,
-                      child: Icon(Icons.emergency, color: Colors.white),
-                    ),
                     title: Text(
                       'Service: ${item['serviceType']}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
                         color: Colors.red,
                       ),
                     ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.person,
-                                size: 16,
-                                color: Colors.blueGrey,
-                              ),
-                              SizedBox(width: 5),
-                              Text(
-                                'User: ${item['userName']}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 5),
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.phone,
-                                size: 16,
-                                color: Colors.blueGrey,
-                              ),
-                              SizedBox(width: 5),
-                              Text(
-                                'Phone: ${item['userPhone']}',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 10),
-                          Text(
-                            'Requested on: ${item['requestTime']}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
+                    subtitle: Text(
+                      'User: ${item['userName']}\nPhone: ${item['userPhone']}',
                     ),
                     trailing: IconButton(
-                      icon: Icon(Icons.call, color: Colors.green, size: 30),
+                      icon: const Icon(Icons.call, color: Colors.green),
                       onPressed: () async {
-                        // সরাসরি সেই ইউজারকে কল করার অপশন
-                        final Uri url = Uri.parse('tel:${item['userPhone']}');
-                        // এখানে url_launcher ব্যবহার করা হয়েছে
+                        final Uri dialUri = Uri.parse(
+                          'tel:${item['userPhone']}',
+                        );
+                        if (await canLaunchUrl(dialUri)) {
+                          await launchUrl(dialUri);
+                        }
                       },
                     ),
                   ),

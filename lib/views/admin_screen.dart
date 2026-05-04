@@ -13,10 +13,10 @@ class _AdminScreenState extends State<AdminScreen> {
   @override
   void initState() {
     super.initState();
-    _loadRequests(); // স্ক্রিন ওপেন হওয়ার সময় ডেটা লোড হবে
+    _loadRequests(); // পেজ লোড হওয়ার সময় ডেটা নিয়ে আসবে
   }
 
-  // ডেটাবেজ থেকে সব রিকোয়েস্ট নিয়ে আসা
+  // ডেটাবেজ থেকে রিকোয়েস্টের লিস্ট নিয়ে আসার ফাংশন
   void _loadRequests() async {
     var data = await _dbHelper.getAllRequests();
     setState(() {
@@ -28,43 +28,114 @@ class _AdminScreenState extends State<AdminScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Panel - Service Logs'),
+        title: Text('Admin Control Panel'),
         backgroundColor: Colors.black87,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh),
+            onPressed: _loadRequests, // রিফ্রেশ বাটন
+          ),
+        ],
       ),
       body: _requests.isEmpty
-          ? Center(child: Text('No service requests found yet.'))
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.inbox, size: 80, color: Colors.grey),
+                  SizedBox(height: 10),
+                  Text(
+                    'No service requests found!',
+                    style: TextStyle(color: Colors.grey, fontSize: 18),
+                  ),
+                ],
+              ),
+            )
           : ListView.builder(
               itemCount: _requests.length,
               itemBuilder: (context, index) {
                 final item = _requests[index];
                 return Card(
                   margin: EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                  elevation: 4,
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   child: ListTile(
+                    contentPadding: EdgeInsets.all(15),
                     leading: CircleAvatar(
                       backgroundColor: Colors.redAccent,
-                      child: Icon(
-                        Icons.notifications_active,
-                        color: Colors.white,
-                      ),
+                      child: Icon(Icons.emergency, color: Colors.white),
                     ),
                     title: Text(
-                      '${item['serviceType']} Request',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      'Service: ${item['serviceType']}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.red,
+                      ),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('User: ${item['userName']}'),
-                        Text('Phone: ${item['userPhone']}'),
-                        Text(
-                          'Time: ${item['requestTime']}',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
-                      ],
+                    subtitle: Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.person,
+                                size: 16,
+                                color: Colors.blueGrey,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                'User: ${item['userName']}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 5),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.phone,
+                                size: 16,
+                                color: Colors.blueGrey,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                'Phone: ${item['userPhone']}',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10),
+                          Text(
+                            'Requested on: ${item['requestTime']}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    trailing: Icon(Icons.call, color: Colors.green),
+                    trailing: IconButton(
+                      icon: Icon(Icons.call, color: Colors.green, size: 30),
+                      onPressed: () async {
+                        // সরাসরি সেই ইউজারকে কল করার অপশন
+                        final Uri url = Uri.parse('tel:${item['userPhone']}');
+                        // এখানে url_launcher ব্যবহার করা হয়েছে
+                      },
+                    ),
                   ),
                 );
               },

@@ -8,11 +8,8 @@ class HomeScreen extends StatelessWidget {
   final String userName;
   final String userPhone;
 
-  const HomeScreen({
-    super.key,
-    required this.userName,
-    required this.userPhone,
-  });
+  // এখানে 'const' রাখা যাবে না কারণ DatabaseHelper() কনস্ট্যান্ট নয়
+  HomeScreen({super.key, required this.userName, required this.userPhone});
 
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
@@ -21,7 +18,6 @@ class HomeScreen extends StatelessWidget {
     String serviceName,
     String hotLine,
   ) async {
-    // ডাটাবেজে রিকোয়েস্ট সেভ করা
     await _dbHelper.requestService(userName, userPhone, serviceName);
 
     final Uri url = Uri.parse('tel:$hotLine');
@@ -50,7 +46,7 @@ class HomeScreen extends StatelessWidget {
               icon: const Icon(Icons.admin_panel_settings),
               onPressed: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AdminScreen()),
+                MaterialPageRoute(builder: (context) => const AdminScreen()),
               ),
             ),
         ],
@@ -64,39 +60,48 @@ class HomeScreen extends StatelessWidget {
               children: [
                 const CircleAvatar(child: Icon(Icons.person)),
                 const SizedBox(width: 15),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome, $userName',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    if (isGuest)
-                      const Text(
-                        'Login for full services',
-                        style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    else
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        'How can we help you?',
-                        style: TextStyle(color: Colors.grey[700]),
+                        'Welcome, $userName',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
                       ),
-                  ],
+                      if (isGuest)
+                        const Text(
+                          'Login for full services',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      else
+                        Text(
+                          'Phone: $userPhone',
+                          style: TextStyle(color: Colors.grey[700]),
+                        ),
+                    ],
+                  ),
                 ),
-                const Spacer(),
                 if (isGuest)
                   ElevatedButton(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
                     ),
-                    child: const Text("Login"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                    ),
+                    child: const Text(
+                      "Login",
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
               ],
             ),
@@ -105,8 +110,8 @@ class HomeScreen extends StatelessWidget {
             child: GridView.count(
               crossAxisCount: 2,
               padding: const EdgeInsets.all(15),
-              mainAxisSpacing: 10,
-              crossAxisSpacing: 10,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
               children: [
                 _buildServiceCard(
                   context,
@@ -122,7 +127,6 @@ class HomeScreen extends StatelessWidget {
                   Colors.orange,
                   '999',
                 ),
-                // গেস্টদের জন্য শুধু উপরের ২টা কাজ করবে, বাকিগুলো লগইন লাগবে
                 if (!isGuest) ...[
                   _buildServiceCard(
                     context,
@@ -152,6 +156,20 @@ class HomeScreen extends StatelessWidget {
                     Colors.teal,
                     '01700000000',
                   ),
+                  _buildServiceCard(
+                    context,
+                    'Home Care',
+                    Icons.home_repair_service,
+                    Colors.brown,
+                    '01700000000',
+                  ),
+                  _buildServiceCard(
+                    context,
+                    'Blood Donor',
+                    Icons.bloodtype,
+                    Colors.redAccent,
+                    '01700000000',
+                  ),
                 ],
               ],
             ),
@@ -169,17 +187,19 @@ class HomeScreen extends StatelessWidget {
     String phone,
   ) {
     return Card(
-      elevation: 3,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: InkWell(
         onTap: () => _handleServiceRequest(context, title, phone),
+        borderRadius: BorderRadius.circular(15),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 45, color: color),
+            Icon(icon, size: 40, color: color),
             const SizedBox(height: 10),
             Text(
               title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
           ],
         ),

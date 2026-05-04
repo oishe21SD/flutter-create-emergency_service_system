@@ -6,75 +6,57 @@ class DatabaseHelper {
   static Database? _database;
 
   factory DatabaseHelper() => _instance;
-
   DatabaseHelper._internal();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDatabase();
+    _database = await _initDB();
     return _database!;
   }
 
-  // ডেটাবেজ ফাইল ইনিশিয়ালাইজ করা
-  Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'emergency_app.db');
-    return await openDatabase(path, version: 1, onCreate: _onCreate);
+  Future<Database> _initDB() async {
+    String path = join(await getDatabasesPath(), 'emergency_system.db');
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (db, version) async {
+        await db.execute(
+          'CREATE TABLE users(id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, phone TEXT, role TEXT)',
+        );
+        await db.execute(
+          'CREATE TABLE requests(id INTEGER PRIMARY KEY AUTOINCREMENT, userName TEXT, userPhone TEXT, serviceType TEXT, time TEXT)',
+        );
+      },
+    );
   }
 
-  // টেবিল তৈরি করা: এখানে ইউজার এবং সার্ভিস রিকোয়েস্ট সেভ হবে
-  Future _onCreate(Database db, int version) async {
-    // ইউজার টেবিল (নাম, ফোন)
-    await db.execute('''
-      CREATE TABLE users(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT,
-        phone TEXT
-      )
-    ''');
-
-    // সার্ভিস টেবিল (অ্যাম্বুলেন্স, পুলিশ ইত্যাদি যা ইউজার ক্লিক করবে)
-    await db.execute('''
-      CREATE TABLE services(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        userName TEXT,
-        userPhone TEXT,
-        serviceType TEXT,
-        requestTime TEXT
-      )
-    ''');
+  Future<void> registerUser(String name, String phone, String role) async {
+    final db = await database;
+    await db.insert('users', {'name': name, 'phone': phone, 'role': role});
   }
 
-  // ইউজার রেজিস্ট্রেশন করার ফাংশন
-  Future<int> registerUser(String name, String phone) async {
-    Database db = await database;
-    return await db.insert('users', {'name': name, 'phone': phone});
+  Future<Map<String, dynamic>?> loginUser(String phone, String role) async {
+    final db = await database;
+    List<Map<String, dynamic>> res = await db.query(
+      'users',
+      where: 'phone = ? AND role = ?',
+      whereArgs: [phone, role],
+    );
+    return res.isNotEmpty ? res.first : null;
   }
 
-  // ইউজার কোনো সার্ভিসে ক্লিক করলে সেটা সেভ করা (যাতে এডমিন দেখতে পায়)
-  Future<int> requestService(String name, String phone, String type) async {
-    Database db = await database;
-    return await db.insert('services', {
+  Future<void> saveRequest(String name, String phone, String service) async {
+    final db = await database;
+    await db.insert('requests', {
       'userName': name,
       'userPhone': phone,
-      'serviceType': type,
-      'requestTime': DateTime.now().toString(),
+      'serviceType': service,
+      'time': DateTime.now().toString(),
     });
   }
 
-  // এডমিনের জন্য সব ইউজারের সার্ভিস রিকোয়েস্ট লিস্ট দেখা
   Future<List<Map<String, dynamic>>> getAllRequests() async {
-    Database db = await database;
-    return await db.query('services', orderBy: 'id DESC');
-  }
-
-  // লগইন চেক করা (ফোন নম্বর দিয়ে)
-  Future<Map<String, dynamic>?> loginUser(String phone) async {
-    Database db = await database;
-    List<Map<String, dynamic>> results = await db.query(
-      'users',
-      where: 'phone = ?',
-      whereArgs: [phone],
-    );
-    return results.isNotEmpty ? results.first : null;
+    final db = await database;
+    return await db.query('requests', orderBy: 'id DESC');
   }
 }
